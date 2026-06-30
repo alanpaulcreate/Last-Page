@@ -22,7 +22,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://lastpage.vercel.app"),
+  metadataBase: new URL("https://ourlastpage.vercel.app"),
   title: "Last Page — Paper Games",
   description:
     "The Last Page of Your School Notebook — play classic paper games online with friends. Hangman, SOS, Dots & Boxes, and Name Place Animal Thing.",
@@ -36,6 +36,12 @@ export const metadata: Metadata = {
     title: "Last Page — Paper Games",
     description: "The Last Page of Your School Notebook",
     type: "website",
+    images: ["/logo.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Last Page — Paper Games",
+    description: "The Last Page of Your School Notebook",
     images: ["/logo.png"],
   },
 };
