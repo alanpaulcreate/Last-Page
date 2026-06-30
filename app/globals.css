@@ -1,0 +1,438 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Root ─────────────────────────────────────────────────────────────── */
+:root {
+  --paper: #FAF7F0;
+  --blue-lines: #BFD7FF;
+  --red-margin: #FF6B6B;
+  --ink: #1F4E79;
+  --pencil: #2D2D2D;
+  --highlight: #FFF3B0;
+  --line-height: 28px;
+  --card-yellow: #FFF3B0;
+  --card-red: #FFE4E4;
+  --card-blue: #E4F0FF;
+  --card-green: #E8FFE4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-inter), sans-serif;
+  color: var(--pencil);
+  background-color: var(--paper);
+  min-height: 100vh;
+}
+
+/* ─── Notebook Background ───────────────────────────────────────────────── */
+.notebook-bg {
+  background-color: var(--paper);
+  background-image: repeating-linear-gradient(
+    transparent 0px,
+    transparent 27px,
+    var(--blue-lines) 27px,
+    var(--blue-lines) 28px
+  );
+  position: relative;
+}
+
+.notebook-bg::before {
+  content: '';
+  position: fixed;
+  left: 20px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--red-margin);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@media (min-width: 640px) {
+  .notebook-bg::before {
+    left: 72px;
+  }
+}
+
+/* Graphite lead pencil smudges and corner shading */
+.graphite-shading-bg {
+  position: fixed;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 5% 5%, rgba(74, 74, 74, 0.03) 0%, transparent 35%),
+    radial-gradient(circle at 95% 95%, rgba(74, 74, 74, 0.04) 0%, transparent 45%),
+    radial-gradient(circle at 90% 10%, rgba(74, 74, 74, 0.02) 0%, transparent 30%),
+    radial-gradient(circle at 50% 50%, transparent 60%, rgba(74, 74, 74, 0.01) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Background hand-drawn pencil drawings */
+.doodle-svg {
+  color: var(--pencil);
+  opacity: 0.12;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.doodle-svg:hover {
+  opacity: 0.25;
+}
+
+/* ─── Typography ────────────────────────────────────────────────────────── */
+.font-hand {
+  font-family: var(--font-caveat), cursive;
+}
+
+.text-ink {
+  color: var(--ink);
+}
+
+/* ─── Pencil Shading & Shadow ───────────────────────────────────────────── */
+/* Layered pencil-stroke drop shadows */
+.pencil-shadow {
+  filter:
+    drop-shadow(2px 3px 0px rgba(31,78,121,0.18))
+    drop-shadow(4px 7px 2px rgba(74,74,74,0.10))
+    drop-shadow(1px 2px 0px rgba(0,0,0,0.08));
+}
+
+/* Diagonal hatching texture overlay */
+.pencil-shade {
+  position: relative;
+  overflow: hidden;
+}
+.pencil-shade::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 5px,
+    rgba(74,74,74,0.035) 5px,
+    rgba(74,74,74,0.035) 6px
+  );
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 1;
+}
+
+/* ─── Sticky Note Cards ─────────────────────────────────────────────────── */
+.sticky-card {
+  background-color: var(--highlight);
+  border-radius: 2px;
+  /* Clean even paper with pencil smudge shadows */
+  box-shadow:
+    3px 3px 0 rgba(74, 74, 74, 0.20),
+    6px 8px 4px rgba(74, 74, 74, 0.11),
+    0 14px 22px rgba(74, 74, 74, 0.07);
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease;
+  will-change: transform;
+  position: relative;
+}
+
+.sticky-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: rgba(0,0,0,0.06);
+  border-radius: 2px 2px 0 0;
+}
+
+.sticky-card:hover {
+  transform: translateY(-10px) rotate(var(--card-rot, -1deg)) scale(1.03);
+  box-shadow:
+    5px 10px 0 rgba(74, 74, 74, 0.18),
+    10px 18px 8px rgba(74, 74, 74, 0.10),
+    0 24px 32px rgba(74, 74, 74, 0.08);
+}
+
+/* ─── Sketch Button ─────────────────────────────────────────────────────── */
+.sketch-btn {
+  position: relative;
+  border: 2.5px solid var(--ink);
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Caveat', cursive;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 8px 20px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  outline: none;
+  overflow: hidden;
+}
+
+.sketch-btn::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border: 1.5px solid var(--ink);
+  border-radius: 2px;
+  opacity: 0.25;
+}
+
+.sketch-btn::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 4px;
+  right: 4px;
+  height: 3px;
+  background: var(--ink);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  border-radius: 2px;
+}
+
+.sketch-btn:hover {
+  background: var(--ink);
+  color: var(--paper);
+  transform: translateY(-2px);
+  box-shadow: 3px 4px 0 rgba(31,78,121,0.35);
+}
+
+.sketch-btn:hover::after {
+  opacity: 0;
+}
+
+.sketch-btn:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.sketch-btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.sketch-btn-primary:hover {
+  background: #163a5a;
+  transform: translateY(-2px);
+  box-shadow: 3px 4px 0 rgba(31,78,121,0.4);
+}
+
+.sketch-btn-danger {
+  border-color: var(--red-margin);
+  color: var(--red-margin);
+}
+
+.sketch-btn-danger:hover {
+  background: var(--red-margin);
+  color: white;
+}
+
+/* ─── Notebook Input ────────────────────────────────────────────────────── */
+.notebook-input {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--blue-lines);
+  padding: 6px 4px;
+  font-family: 'Caveat', cursive;
+  font-size: 1.15rem;
+  color: var(--ink);
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s ease;
+}
+
+.notebook-input:focus {
+  border-bottom-color: var(--ink);
+}
+
+.notebook-input::placeholder {
+  color: #a0b4c8;
+  font-style: italic;
+}
+
+/* ─── Room Code Badge ───────────────────────────────────────────────────── */
+.room-code {
+  font-family: 'Caveat', cursive;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.35em;
+  background: var(--highlight);
+  border: 2.5px dashed var(--blue-lines);
+  padding: 8px 20px;
+  border-radius: 4px;
+  display: inline-block;
+  box-shadow: 3px 3px 0 rgba(74,74,74,0.15), 5px 6px 4px rgba(74,74,74,0.07);
+}
+
+/* ─── Desktop Scaling ───────────────────────────────────────────────────── */
+@media (min-width: 1024px) {
+  :root {
+    --line-height: 34px;
+  }
+
+  .notebook-bg {
+    background-image: repeating-linear-gradient(
+      transparent 0px,
+      transparent 33px,
+      var(--blue-lines) 33px,
+      var(--blue-lines) 34px
+    );
+  }
+
+  .sticky-card {
+    padding: 2rem;
+  }
+
+  .sticky-card:hover {
+    transform: translateY(-12px) rotate(var(--card-rot, -1deg)) scale(1.04);
+  }
+
+  .sketch-btn {
+    font-size: 1.2rem;
+    padding: 10px 26px;
+  }
+
+  .room-code {
+    font-size: 2.4rem;
+    padding: 10px 28px;
+  }
+
+  .sos-cell {
+    font-size: 2.2rem;
+  }
+
+  .notebook-input {
+    font-size: 1.3rem;
+  }
+}
+
+/* ─── Game Grid Cells ───────────────────────────────────────────────────── */
+.sos-cell {
+  border: 2px solid var(--blue-lines);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Caveat', cursive;
+  font-weight: 700;
+  font-size: 1.8rem;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  user-select: none;
+}
+
+.sos-cell:hover {
+  background: rgba(191,215,255,0.3);
+  transform: scale(0.97);
+}
+
+/* ─── Win Burst ─────────────────────────────────────────────────────────── */
+@keyframes starBurst {
+  0% { transform: scale(0) rotate(0deg); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: scale(2.5) rotate(45deg); opacity: 0; }
+}
+
+@keyframes starFloat {
+  0% { transform: translate(0, 0) scale(0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(1) rotate(var(--rot)); opacity: 0; }
+}
+
+.win-star {
+  position: absolute;
+  animation: starFloat 0.8s ease-out forwards;
+  font-size: 1.4rem;
+  pointer-events: none;
+}
+
+/* ─── Gallows SVG animation ─────────────────────────────────────────────── */
+.gallows-part {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: drawPart 0.4s ease forwards;
+}
+
+@keyframes drawPart {
+  to { stroke-dashoffset: 0; }
+}
+
+/* ─── Letter reveal ─────────────────────────────────────────────────────── */
+@keyframes letterReveal {
+  from { opacity: 0; transform: translateY(6px) scale(0.8); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.letter-reveal {
+  animation: letterReveal 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+
+/* ─── Box claim animation ───────────────────────────────────────────────── */
+@keyframes boxClaim {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 0.7; }
+}
+
+.box-claimed {
+  animation: boxClaim 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+
+/* ─── Fade in up ────────────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+.fade-in-up-delay-1 { animation-delay: 0.05s; opacity: 0; }
+.fade-in-up-delay-2 { animation-delay: 0.1s; opacity: 0; }
+.fade-in-up-delay-3 { animation-delay: 0.15s; opacity: 0; }
+.fade-in-up-delay-4 { animation-delay: 0.2s; opacity: 0; }
+
+/* ─── Dots & Boxes lines ────────────────────────────────────────────────── */
+.dot-line {
+  cursor: pointer;
+  transition: opacity 0.15s;
+  opacity: 0.15;
+}
+.dot-line:hover {
+  opacity: 0.6;
+}
+.dot-line.claimed {
+  opacity: 1;
+  cursor: default;
+}
+
+/* ─── Scribble underline ────────────────────────────────────────────────── */
+@keyframes scribble {
+  from { stroke-dashoffset: 120; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* ─── Pulse ─────────────────────────────────────────────────────────────── */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.4; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+.pulse-ring {
+  animation: pulse-ring 1.2s ease-out infinite;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--paper); }
+::-webkit-scrollbar-thumb { background: var(--blue-lines); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink); }
