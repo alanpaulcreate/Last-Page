@@ -17,6 +17,7 @@ const MARGIN_DOODLES = [
   { src: "/doodles/j.png", widthClass: "w-10 sm:w-20" },
   { src: "/doodles/j2.png", widthClass: "w-8 sm:w-16" },
   { src: "/doodles/j3.png", widthClass: "w-10 sm:w-20" },
+  { src: "/doodles/rosa.png", widthClass: "w-12 sm:w-24" },
 ];
 
 const WATERMARK_DOODLES = [
