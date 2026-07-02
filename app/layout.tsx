@@ -3,6 +3,7 @@ import "./globals.css";
 import NavBar from "@/components/layout/NavBar";
 import DoodleBackground from "@/components/layout/DoodleBackground";
 import Link from "next/link";
+import { Analytics } from "@vercel/analytics/next";
 
 export const viewport: Viewport = {
   themeColor: "#0e408e",
@@ -85,6 +86,7 @@ export default function RootLayout({
             </div>
           </div>
         </footer>
+        <Analytics />
       </body>
     </html>
   );
