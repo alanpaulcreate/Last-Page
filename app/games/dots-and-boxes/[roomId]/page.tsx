@@ -10,21 +10,47 @@ import RoomCodeDisplay from "@/components/ui/RoomCodeDisplay";
 import WinBurst from "@/components/ui/WinBurst";
 import ChatBox from "@/components/ui/ChatBox";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import CoinToss from "@/components/ui/CoinToss";
+import { PencilIcon } from "@/components/ui/Icons";
+import InGameApproval from "@/components/games/InGameApproval";
 
 export default function DotsGamePage() {
   const { roomId } = useParams<{ roomId: string }>();
   const { room, loading } = useRoom(roomId);
   const { user } = useAuth();
   const router = useRouter();
+  const [showWinOverlay, setShowWinOverlay] = useState(true);
+
+  const state = room?.gameState as DotsState | undefined;
+  const isOver = state ? state.winner !== null : false;
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/auth");
+      const currentPath = window.location.pathname + window.location.search;
+      router.replace(`/auth?redirect=${encodeURIComponent(currentPath)}`);
     }
   }, [loading, user, router]);
 
-  if (loading || !room || !user) {
+  useEffect(() => {
+    if (!isOver) {
+      setShowWinOverlay(true);
+    }
+  }, [isOver]);
+
+  // Assign toss state once both players have joined
+  useEffect(() => {
+    if (loading || !room || room.players.length < 2 || !user) return;
+    const state = room.gameState as DotsState;
+    if (!state.toss) {
+      updateGameState(roomId, {
+        ...state,
+        toss: { status: "idle" },
+      });
+    }
+  }, [room, roomId, loading, user]);
+
+  if (loading || !room || !user || !state) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="font-hand text-2xl text-ink animate-pulse">
@@ -34,18 +60,13 @@ export default function DotsGamePage() {
     );
   }
 
-  const state = room.gameState as DotsState;
   const playerUids = room.players.map((p) => p.uid);
-  const isMyTurn = state.currentPlayerUid === user.uid || state.currentPlayerUid === "";
-  const isOver = state.winner !== null;
+  const isMyTurn = state.currentPlayerUid === user.uid;
   const n = state.gridSize;
 
   const handleLine = async (type: LineType, row: number, col: number) => {
     if (!isMyTurn || isOver) return;
-    const initState = state.currentPlayerUid === ""
-      ? { ...state, currentPlayerUid: user.uid, scores: Object.fromEntries(room.players.map(p => [p.uid, 0])) }
-      : state;
-    const newState = claimLine(initState, type, row, col, user.uid, playerUids);
+    const newState = claimLine(state, type, row, col, user.uid, playerUids);
     await updateGameState(roomId, newState);
     if (newState.winner) await updateRoomStatus(roomId, "finished");
   };
@@ -53,10 +74,9 @@ export default function DotsGamePage() {
   const handleNewGame = async () => {
     const { initialDotsState } = await import("@/lib/games/dots-and-boxes");
     const s = initialDotsState(state.gridSize);
-    s.currentPlayerUid = room.players[0].uid;
-    s.scores = Object.fromEntries(room.players.map(p => [p.uid, 0]));
+    s.toss = { status: "idle" };
     await updateGameState(roomId, s);
-    await updateRoomStatus(roomId, "active");
+    await updateRoomStatus(roomId, "waiting");
   };
 
   const handleLeaveMatch = async () => {
@@ -86,9 +106,9 @@ export default function DotsGamePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 pl-6 sm:pl-24 py-8">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <Link href="/games/dots-and-boxes" className="font-hand text-pencil/80 hover:text-ink transition-colors">
-          ← Dots & Boxes
-        </Link>
+        <button onClick={handleLeaveMatch} className="font-hand text-pencil/80 hover:text-ink transition-colors cursor-pointer">
+          ← Leave Room
+        </button>
         <h1 className="sr-only">Dots and Boxes Game Room {roomId}</h1>
         <RoomCodeDisplay code={roomId} />
         <div className="font-hand text-sm text-pencil/80">
@@ -105,7 +125,13 @@ export default function DotsGamePage() {
           >
             <p className="font-hand text-xs text-pencil/80 mb-1">Current Turn</p>
             <p className="font-hand text-ink text-lg font-bold">
-              {isMyTurn ? "✏️ Your turn!" : `⏳ ${currentPlayer?.displayName || "Waiting..."}`}
+              {isMyTurn ? (
+                <span className="flex items-center justify-center gap-1">
+                  <PencilIcon size={18} className="inline-block" /> Your turn!
+                </span>
+              ) : (
+                `⏳ ${currentPlayer?.displayName || "Waiting..."}`
+              )}
             </p>
           </div>
           <div className="space-y-2">
@@ -227,12 +253,24 @@ export default function DotsGamePage() {
       </div>
 
       <WinBurst
-        show={isOver}
+        show={isOver && showWinOverlay}
         message={winMessage}
-        onClose={room.hostId === user.uid ? handleNewGame : handleLeaveMatch}
-        onCloseLabel={room.hostId === user.uid ? "Play Again" : "Leave Match"}
+        onClose={room.hostId === user.uid ? handleNewGame : () => setShowWinOverlay(false)}
+        onCloseLabel={room.hostId === user.uid ? "Play Again" : "Close"}
       />
-      <ChatBox roomId={roomId} />
+      {state.toss && state.toss.status !== "completed" && (
+        <CoinToss
+          roomId={roomId}
+          toss={state.toss}
+          players={room.players}
+          userId={user.uid}
+          displayName={user.displayName || "Anonymous"}
+          gameType="dots-and-boxes"
+          gameState={state}
+        />
+      )}
+      <ChatBox roomId={roomId} isHost={room.hostId === user.uid} />
+      <InGameApproval roomId={roomId} joinRequests={room.joinRequests || []} isHost={room.hostId === user.uid} />
     </div>
   );
 }

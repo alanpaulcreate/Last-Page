@@ -8,6 +8,7 @@ export function initialSOSState(gridSize: number): SOSState {
     scores: {},
     sosSequences: [],
     winner: null,
+    toss: { status: "idle" },
   };
 }
 

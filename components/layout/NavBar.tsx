@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { usePathname, useRouter } from "next/navigation";
 import { leaveRoom } from "@/lib/firestore";
+import { PencilIcon } from "@/components/ui/Icons";
 
 export default function NavBar() {
   const { user, loading } = useAuth();
@@ -72,8 +73,8 @@ export default function NavBar() {
               )}
             </div>
           ) : (
-            <Link href="/auth" className="sketch-btn-primary sketch-btn text-sm py-2 px-5">
-              ✏️ Play
+            <Link href={`/auth?redirect=${encodeURIComponent(pathname)}`} className="sketch-btn-primary sketch-btn text-sm py-2 px-5 flex items-center gap-1.5 justify-center">
+              <PencilIcon size={16} /> Play
             </Link>
           )}
         </div>

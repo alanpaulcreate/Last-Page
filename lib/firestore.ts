@@ -11,6 +11,9 @@ import {
   orderBy,
   query,
   limit,
+  deleteDoc,
+  getDocs,
+  where,
 } from "firebase/firestore";
 import { getDb } from "./firebase";
 import { Room, GameType, Player, GameSettings } from "@/types";
@@ -19,6 +22,8 @@ import { initialHangmanState } from "./games/hangman";
 import { initialSOSState } from "./games/sos";
 import { initialDotsState } from "./games/dots-and-boxes";
 import { initialNamePlaceState } from "./games/name-place";
+import { initialBingoState } from "./games/bingo";
+import { initialTicTacToeState } from "./games/tic-tac-toe";
 
 // ─── Room ID generation ────────────────────────────────────────────────────────
 
@@ -37,6 +42,8 @@ function gameInitialState(gameType: GameType, settings: GameSettings) {
     case "sos": return initialSOSState(settings.gridSize || 4);
     case "dots-and-boxes": return initialDotsState(settings.gridSize || 4);
     case "name-place": return initialNamePlaceState(settings.totalRounds || 5, settings.timerSeconds || 60);
+    case "bingo": return initialBingoState();
+    case "tic-tac-toe": return initialTicTacToeState();
   }
 }
 
@@ -56,7 +63,7 @@ export async function createRoom(
   }
 
   const now = Timestamp.now();
-  const expiresAt = Timestamp.fromMillis(now.toMillis() + 24 * 60 * 60 * 1000);
+  const expiresAt = Timestamp.fromMillis(now.toMillis() + 2 * 60 * 60 * 1000);
 
   const playerWithColor: Player = { ...host, color: PLAYER_COLORS[0], score: 0, isReady: false };
 
@@ -99,8 +106,13 @@ export async function joinRoom(roomId: string, player: Player): Promise<Room | n
   const alreadyIn = room.players.find((p) => p.uid === player.uid);
   if (alreadyIn) return room;
 
-  // Room full (4 max for name-place, 2 for others)
-  const maxPlayers = room.gameType === "name-place" ? 4 : 2;
+  // Block direct join if host approval is required and caller is not host
+  if (room.settings?.requireApproval && room.hostId !== player.uid) {
+    return room;
+  }
+
+  // Room full (4 max for name-place and bingo, 2 for others)
+  const maxPlayers = (room.gameType === "name-place" || room.gameType === "bingo") ? 4 : 2;
   if (room.players.length >= maxPlayers) return null;
 
   const colorIndex = room.players.length % PLAYER_COLORS.length;
@@ -240,4 +252,102 @@ export function subscribeChatMessages(
       console.warn("Firestore snapshot error in subscribeChatMessages:", error.message);
     }
   );
+}
+
+/* ─── Room Settings, Approvals, & Chat Moderation ─────────────────────── */
+
+export async function fetchPublicRooms(gameType: GameType): Promise<Room[]> {
+  const q = query(
+    collection(getDb(), "rooms"),
+    where("gameType", "==", gameType),
+    where("status", "==", "waiting"),
+    limit(50)
+  );
+  const snap = await getDocs(q);
+  const rooms = snap.docs.map((d) => {
+    const data = d.data();
+    return {
+      ...data,
+      gameState: typeof data.gameState === "string" ? JSON.parse(data.gameState) : data.gameState,
+    } as Room;
+  });
+  return rooms.filter((r) => r.settings?.isPublic === true);
+}
+
+export async function requestToJoinRoom(roomId: string, player: Player): Promise<boolean> {
+  const ref = doc(getDb(), "rooms", roomId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return false;
+
+  const data = snap.data();
+  const room = {
+    ...data,
+    gameState: typeof data.gameState === "string" ? JSON.parse(data.gameState) : data.gameState,
+  } as Room;
+
+  const maxPlayers = (room.gameType === "name-place" || room.gameType === "bingo") ? 4 : 2;
+  if (room.players.length >= maxPlayers) return false;
+
+  if (room.players.some((p) => p.uid === player.uid)) return true;
+
+  const requests = data.joinRequests || [];
+  if (requests.some((r: any) => r.uid === player.uid)) return true;
+
+  const colorIndex = (room.players.length + requests.length) % PLAYER_COLORS.length;
+  const newPlayer: Player = { ...player, color: PLAYER_COLORS[colorIndex], score: 0, isReady: false };
+
+  await updateDoc(ref, {
+    joinRequests: [...requests, newPlayer],
+    updatedAt: Timestamp.now(),
+  });
+  return true;
+}
+
+export async function approveJoinRequest(roomId: string, player: Player): Promise<void> {
+  const ref = doc(getDb(), "rooms", roomId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+
+  const data = snap.data() as Room;
+  const requests = data.joinRequests || [];
+  const updatedRequests = requests.filter((r) => r.uid !== player.uid);
+
+  if (data.players.some((p) => p.uid === player.uid)) {
+    await updateDoc(ref, { joinRequests: updatedRequests });
+    return;
+  }
+
+  await updateDoc(ref, {
+    players: [...data.players, player],
+    joinRequests: updatedRequests,
+    updatedAt: Timestamp.now(),
+  });
+}
+
+export async function declineJoinRequest(roomId: string, playerUid: string): Promise<void> {
+  const ref = doc(getDb(), "rooms", roomId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+
+  const data = snap.data() as Room;
+  const requests = data.joinRequests || [];
+  const updatedRequests = requests.filter((r) => r.uid !== playerUid);
+
+  await updateDoc(ref, {
+    joinRequests: updatedRequests,
+    updatedAt: Timestamp.now(),
+  });
+}
+
+export async function deleteChatMessage(roomId: string, messageId: string): Promise<void> {
+  const messageRef = doc(getDb(), "rooms", roomId, "messages", messageId);
+  await deleteDoc(messageRef);
+}
+
+export async function clearChatMessages(roomId: string): Promise<void> {
+  const messagesRef = collection(getDb(), "rooms", roomId, "messages");
+  const snap = await getDocs(messagesRef);
+  for (const docSnap of snap.docs) {
+    await deleteDoc(docSnap.ref);
+  }
 }

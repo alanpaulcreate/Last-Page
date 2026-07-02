@@ -29,19 +29,30 @@ export default function NamePlaceGamePage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/auth");
-    }
-  }, [loading, user, router]);
   const [answers, setAnswers] = useState<TextAnswers>({ name: "", place: "", animal: "", thing: "" });
   const [timeLeft, setTimeLeft] = useState(60);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [showWinOverlay, setShowWinOverlay] = useState(true);
 
   const state = room?.gameState as NamePlaceState | undefined;
   const isHost = room?.hostId === user?.uid;
   const playerUids = room?.players.map((p) => p.uid) || [];
+  const isOver = state ? state.winner !== null : false;
+
+  useEffect(() => {
+    if (!loading && !user) {
+      const currentPath = window.location.pathname + window.location.search;
+      router.replace(`/auth?redirect=${encodeURIComponent(currentPath)}`);
+    }
+  }, [loading, user, router]);
+
+  // Reset win overlay state when a new game starts
+  useEffect(() => {
+    if (!isOver) {
+      setShowWinOverlay(true);
+    }
+  }, [isOver]);
 
   // Timer countdown during answering phase
   useEffect(() => {
@@ -143,7 +154,6 @@ export default function NamePlaceGamePage() {
     router.push("/");
   };
 
-  const isOver = state.winner !== null;
   const winnerPlayer = room.players.find((p) => p.uid === state.winner);
   const winMessage = state.winner === "draw"
     ? "🤝 It's a draw!"
@@ -156,9 +166,9 @@ export default function NamePlaceGamePage() {
     <div className="max-w-4xl mx-auto px-4 pl-6 sm:pl-24 py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <Link href="/games/name-place" className="font-hand text-pencil/80 hover:text-ink transition-colors">
-          ← Name Place
-        </Link>
+        <button onClick={handleLeaveMatch} className="font-hand text-pencil/80 hover:text-ink transition-colors cursor-pointer">
+          ← Leave Room
+        </button>
         <h1 className="sr-only">Name Place Animal Thing Game Room {roomId}</h1>
         <RoomCodeDisplay code={roomId} />
         <div className="font-hand text-sm text-pencil/80">
@@ -318,12 +328,12 @@ export default function NamePlaceGamePage() {
       </div>
 
       <WinBurst
-        show={isOver}
+        show={isOver && showWinOverlay}
         message={winMessage}
-        onClose={isHost ? handleNewGame : handleLeaveMatch}
-        onCloseLabel={isHost ? "Play Again" : "Leave Match"}
+        onClose={isHost ? handleNewGame : () => setShowWinOverlay(false)}
+        onCloseLabel={isHost ? "Play Again" : "Close"}
       />
-      <ChatBox roomId={roomId} />
+      <ChatBox roomId={roomId} isHost={isHost} />
     </div>
   );
 }

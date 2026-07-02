@@ -11,6 +11,9 @@ import WinBurst from "@/components/ui/WinBurst";
 import ChatBox from "@/components/ui/ChatBox";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import CoinToss from "@/components/ui/CoinToss";
+import { PencilIcon } from "@/components/ui/Icons";
+import InGameApproval from "@/components/games/InGameApproval";
 
 export default function SOSGamePage() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -18,14 +21,37 @@ export default function SOSGamePage() {
   const { user } = useAuth();
   const router = useRouter();
   const [selectedLetter, setSelectedLetter] = useState<"S" | "O">("S");
+  const [showWinOverlay, setShowWinOverlay] = useState(true);
+
+  const state = room?.gameState as SOSState | undefined;
+  const isOver = state ? state.winner !== null : false;
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/auth");
+      const currentPath = window.location.pathname + window.location.search;
+      router.replace(`/auth?redirect=${encodeURIComponent(currentPath)}`);
     }
   }, [loading, user, router]);
 
-  if (loading || !room || !user) {
+  useEffect(() => {
+    if (!isOver) {
+      setShowWinOverlay(true);
+    }
+  }, [isOver]);
+
+  // Assign toss state once both players have joined
+  useEffect(() => {
+    if (loading || !room || room.players.length < 2 || !user) return;
+    const state = room.gameState as SOSState;
+    if (!state.toss) {
+      updateGameState(roomId, {
+        ...state,
+        toss: { status: "idle" },
+      });
+    }
+  }, [room, roomId, loading, user]);
+
+  if (loading || !room || !user || !state) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="font-hand text-2xl text-ink animate-pulse">
@@ -35,18 +61,13 @@ export default function SOSGamePage() {
     );
   }
 
-  const state = room.gameState as SOSState;
   const playerUids = room.players.map((p) => p.uid);
-  const isMyTurn = state.currentPlayerUid === user.uid || state.currentPlayerUid === "";
-  const isOver = state.winner !== null;
+  const isMyTurn = state.currentPlayerUid === user.uid;
   const currentPlayer = room.players.find((p) => p.uid === state.currentPlayerUid);
 
   const handleCellClick = async (row: number, col: number) => {
     if (!isMyTurn || isOver || state.grid[row][col] !== null) return;
-    const initState = state.currentPlayerUid === ""
-      ? { ...state, currentPlayerUid: user.uid, scores: Object.fromEntries(room.players.map(p => [p.uid, 0])) }
-      : state;
-    const newState = placeLetter(initState, row, col, selectedLetter, user.uid, playerUids);
+    const newState = placeLetter(state, row, col, selectedLetter, user.uid, playerUids);
     await updateGameState(roomId, newState);
     if (newState.winner) await updateRoomStatus(roomId, "finished");
   };
@@ -54,10 +75,9 @@ export default function SOSGamePage() {
   const handleNewGame = async () => {
     const { initialSOSState } = await import("@/lib/games/sos");
     const s = initialSOSState(state.gridSize);
-    s.currentPlayerUid = room.players[0].uid;
-    s.scores = Object.fromEntries(room.players.map(p => [p.uid, 0]));
+    s.toss = { status: "idle" };
     await updateGameState(roomId, s);
-    await updateRoomStatus(roomId, "active");
+    await updateRoomStatus(roomId, "waiting");
   };
 
   const handleLeaveMatch = async () => {
@@ -78,9 +98,9 @@ export default function SOSGamePage() {
     <div className="max-w-4xl mx-auto px-4 pl-6 sm:pl-24 py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <Link href="/games/sos" className="font-hand text-pencil/80 hover:text-ink transition-colors">
-          ← SOS
-        </Link>
+        <button onClick={handleLeaveMatch} className="font-hand text-pencil/80 hover:text-ink transition-colors cursor-pointer">
+          ← Leave Room
+        </button>
         <h1 className="sr-only">SOS Game Room {roomId}</h1>
         <RoomCodeDisplay code={roomId} />
         <div className="font-hand text-sm text-pencil/80">
@@ -121,7 +141,13 @@ export default function SOSGamePage() {
           >
             <p className="font-hand text-xs text-pencil/80 mb-1">Current Turn</p>
             <p className="font-hand text-ink text-lg font-bold">
-              {isMyTurn ? "✏️ Your turn!" : `⏳ ${currentPlayer?.displayName || "Waiting..."}`}
+              {isMyTurn ? (
+                <span className="flex items-center justify-center gap-1">
+                  <PencilIcon size={18} className="inline-block" /> Your turn!
+                </span>
+              ) : (
+                `⏳ ${currentPlayer?.displayName || "Waiting..."}`
+              )}
             </p>
           </div>
 
@@ -200,12 +226,24 @@ export default function SOSGamePage() {
       </div>
 
       <WinBurst
-        show={isOver}
+        show={isOver && showWinOverlay}
         message={winMessage}
-        onClose={room.hostId === user.uid ? handleNewGame : handleLeaveMatch}
-        onCloseLabel={room.hostId === user.uid ? "Play Again" : "Leave Match"}
+        onClose={room.hostId === user.uid ? handleNewGame : () => setShowWinOverlay(false)}
+        onCloseLabel={room.hostId === user.uid ? "Play Again" : "Close"}
       />
-      <ChatBox roomId={roomId} />
+      {state.toss && state.toss.status !== "completed" && (
+        <CoinToss
+          roomId={roomId}
+          toss={state.toss}
+          players={room.players}
+          userId={user.uid}
+          displayName={user.displayName || "Anonymous"}
+          gameType="sos"
+          gameState={state}
+        />
+      )}
+      <ChatBox roomId={roomId} isHost={room.hostId === user.uid} />
+      <InGameApproval roomId={roomId} joinRequests={room.joinRequests || []} isHost={room.hostId === user.uid} />
     </div>
   );
 }

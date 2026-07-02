@@ -11,7 +11,7 @@ export interface AppUser {
 
 // ─── Room / Game ──────────────────────────────────────────────────────────────
 
-export type GameType = "hangman" | "sos" | "dots-and-boxes" | "name-place";
+export type GameType = "hangman" | "sos" | "dots-and-boxes" | "name-place" | "bingo" | "tic-tac-toe";
 
 export type RoomStatus = "waiting" | "active" | "finished";
 
@@ -30,10 +30,11 @@ export interface Room {
   status: RoomStatus;
   hostId: string;
   players: Player[];
+  joinRequests?: Player[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
   expiresAt: Timestamp;
-  gameState: HangmanState | SOSState | DotsState | NamePlaceState;
+  gameState: HangmanState | SOSState | DotsState | NamePlaceState | BingoState | TicTacToeState;
   settings: GameSettings;
 }
 
@@ -41,6 +42,8 @@ export interface GameSettings {
   gridSize?: number; // SOS / Dots: 3–6
   totalRounds?: number; // Name Place: default 5
   timerSeconds?: number; // Name Place: default 60
+  isPublic?: boolean;
+  requireApproval?: boolean;
 }
 
 // ─── Hangman ──────────────────────────────────────────────────────────────────
@@ -71,6 +74,7 @@ export interface SOSState {
   scores: Record<string, number>;
   sosSequences: SOSSequence[];
   winner: string | null; // uid or "draw"
+  toss?: TossState;
 }
 
 // ─── Dots and Boxes ───────────────────────────────────────────────────────────
@@ -85,6 +89,7 @@ export interface DotsState {
   currentPlayerUid: string;
   scores: Record<string, number>;
   winner: string | null;
+  toss?: TossState;
 }
 
 // ─── Name Place Animal Thing ──────────────────────────────────────────────────
@@ -118,8 +123,38 @@ export interface GameCardInfo {
   type: GameType;
   title: string;
   description: string;
-  icon: string;
+  icon: any;
   color: string; // sticky note background tint
   rotation: string; // CSS rotate value
   players: string;
+}
+
+export interface TossState {
+  status: "idle" | "tossing" | "completed";
+  coinSide?: "heads" | "tails";
+  winnerUid?: string;
+  tossedBy?: string;
+  tossedAt?: number;
+}
+
+// ─── Bingo ────────────────────────────────────────────────────────────────────
+
+export interface BingoState {
+  boards: Record<string, number[][]>; // uid -> 5x5 board
+  marked: number[]; // Numbers called (1-25)
+  currentPlayerUid: string;
+  readyPlayers: string[]; // List of uids who submitted their boards
+  winner: string | null; // uid of winner, or "draw", or null
+  toss?: TossState;
+}
+
+// ─── Tic-tac-toe ──────────────────────────────────────────────────────────────
+
+export interface TicTacToeState {
+  grid: (string | null)[]; // 9 cells
+  currentPlayerUid: string;
+  xPlayerUid: string;
+  oPlayerUid: string;
+  winner: string | null; // uid, "draw", or null
+  toss?: TossState;
 }

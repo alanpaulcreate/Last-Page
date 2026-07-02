@@ -1,11 +1,17 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { loginAsGuest, loginWithGoogle, randomGuestName } from "@/lib/auth";
 import { useAuth } from "@/hooks/useAuth";
+import { NotebookIcon, DiceIcon, PenIcon, PencilIcon } from "@/components/ui/Icons";
 
-export default function AuthPage() {
+function AuthContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawRedirect = searchParams.get("redirect") || "/";
+  // Protect against open redirect vulnerabilities by ensuring it starts with / and not //
+  const redirect = (rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")) ? rawRedirect : "/";
+
   const { user, loading } = useAuth();
   const [guestName, setGuestName] = useState(randomGuestName());
   const [error, setError] = useState("");
@@ -14,9 +20,9 @@ export default function AuthPage() {
   useEffect(() => {
     // Already logged in
     if (!loading && user) {
-      router.replace("/");
+      router.replace(redirect);
     }
-  }, [loading, user, router]);
+  }, [loading, user, router, redirect]);
 
   if (!loading && user) {
     return null;
@@ -28,7 +34,7 @@ export default function AuthPage() {
     setError("");
     try {
       await loginAsGuest(guestName.trim());
-      router.replace("/");
+      router.replace(redirect);
     } catch {
       setError("Couldn't sign in as guest. Please try again.");
     } finally {
@@ -41,7 +47,7 @@ export default function AuthPage() {
     setError("");
     try {
       await loginWithGoogle();
-      router.replace("/");
+      router.replace(redirect);
     } catch {
       setError("Google sign-in failed. Please try again.");
     } finally {
@@ -59,7 +65,9 @@ export default function AuthPage() {
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-6 rounded-sm opacity-60 bg-blue-lines border border-blue-lines/50" />
 
         <div className="text-center mb-8">
-          <span className="text-5xl block mb-3">📓</span>
+          <div className="flex justify-center mb-3">
+            <NotebookIcon size={56} className="text-ink animate-pulse" />
+          </div>
           <h1 className="font-hand text-3xl font-bold text-ink mb-1">
             Join the Game
           </h1>
@@ -74,8 +82,8 @@ export default function AuthPage() {
 
         {/* Guest name */}
         <div className="mb-6">
-          <label htmlFor="nickname-input" className="font-hand text-ink text-base block mb-2">
-            ✏️ Your nickname
+          <label htmlFor="nickname-input" className="font-hand text-ink text-base block mb-2 flex items-center gap-1.5 justify-center">
+            <PencilIcon size={18} className="text-pencil/80" /> Your nickname
           </label>
           <div className="flex gap-2 items-end">
             <input
@@ -90,10 +98,10 @@ export default function AuthPage() {
             />
             <button
               onClick={() => setGuestName(randomGuestName())}
-              className="text-xl opacity-40 hover:opacity-80 transition-opacity pb-1"
+              className="opacity-40 hover:opacity-80 transition-opacity pb-1 flex items-center justify-center h-9 w-9 border border-transparent rounded hover:bg-ink/5"
               title="Randomize name"
             >
-              🎲
+              <DiceIcon size={20} className="text-ink" />
             </button>
           </div>
         </div>
@@ -103,7 +111,13 @@ export default function AuthPage() {
           disabled={isLoading || !guestName.trim()}
           className="sketch-btn-primary sketch-btn w-full mb-3 py-3 text-lg"
         >
-          {isLoading ? "Writing name..." : "🖊️ Play as Guest"}
+          {isLoading ? (
+            "Writing name..."
+          ) : (
+            <span className="flex items-center justify-center gap-1.5">
+              <PenIcon size={20} /> Play as Guest
+            </span>
+          )}
         </button>
 
         <div className="flex items-center gap-3 my-4">
@@ -131,5 +145,21 @@ export default function AuthPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="font-hand text-ink text-2xl animate-pulse">
+            Sharpening pencils...
+          </div>
+        </div>
+      }
+    >
+      <AuthContent />
+    </Suspense>
   );
 }

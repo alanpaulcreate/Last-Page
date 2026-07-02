@@ -12,6 +12,7 @@ export function initialDotsState(gridSize: number): DotsState {
     currentPlayerUid: "",
     scores: {},
     winner: null,
+    toss: { status: "idle" },
   };
 }
 

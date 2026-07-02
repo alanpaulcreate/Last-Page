@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useRoom } from "@/hooks/useRoom";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,12 +19,23 @@ export default function HangmanGamePage() {
   const { room, loading } = useRoom(roomId);
   const { user } = useAuth();
   const router = useRouter();
+  const [showWinOverlay, setShowWinOverlay] = useState(true);
+
+  const state = room?.gameState as HangmanState | undefined;
+  const isOver = state ? (state.winner !== null || state.loser !== null) : false;
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/auth");
+      const currentPath = window.location.pathname + window.location.search;
+      router.replace(`/auth?redirect=${encodeURIComponent(currentPath)}`);
     }
   }, [loading, user, router]);
+
+  useEffect(() => {
+    if (!isOver) {
+      setShowWinOverlay(true);
+    }
+  }, [isOver]);
 
   if (loading) {
     return (
@@ -34,7 +45,7 @@ export default function HangmanGamePage() {
     );
   }
 
-  if (!room || !user) {
+  if (!room || !user || !state) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -47,10 +58,8 @@ export default function HangmanGamePage() {
     );
   }
 
-  const state = room.gameState as HangmanState;
   const isMyTurn = true; // In hangman, both players can guess
   const isHost = room.hostId === user.uid;
-  const isOver = state.winner !== null || state.loser !== null;
 
   const handleGuess = async (letter: string) => {
     if (state.guessedLetters.includes(letter) || isOver) return;
@@ -83,9 +92,9 @@ export default function HangmanGamePage() {
     <div className="max-w-4xl mx-auto px-4 pl-6 sm:pl-24 py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <Link href="/games/hangman" className="font-hand text-pencil/80 hover:text-ink transition-colors">
-          ← Hangman
-        </Link>
+        <button onClick={handleLeaveMatch} className="font-hand text-pencil/80 hover:text-ink transition-colors cursor-pointer">
+          ← Leave Room
+        </button>
         <h1 className="sr-only">Hangman Room {roomId}</h1>
         <RoomCodeDisplay code={roomId} />
         <div className="text-sm font-hand text-pencil/80">
@@ -199,12 +208,12 @@ export default function HangmanGamePage() {
 
       {/* Win/Lose overlay */}
       <WinBurst
-        show={isOver}
+        show={isOver && showWinOverlay}
         message={winMessage}
-        onClose={isHost ? handleNewGame : handleLeaveMatch}
-        onCloseLabel={isHost ? "Play Again" : "Leave Match"}
+        onClose={isHost ? handleNewGame : () => setShowWinOverlay(false)}
+        onCloseLabel={isHost ? "Play Again" : "Close"}
       />
-      <ChatBox roomId={roomId} />
+      <ChatBox roomId={roomId} isHost={isHost} />
     </div>
   );
 }

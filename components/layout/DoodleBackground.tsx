@@ -6,10 +6,17 @@ const MARGIN_DOODLES = [
   { src: "/doodles/doodle.png", widthClass: "w-12 sm:w-24" },
   { src: "/doodles/heart.png", widthClass: "w-8 sm:w-16" },
   { src: "/doodles/dd.png", widthClass: "w-10 sm:w-20" },
-  { src: "/doodles/df.png", widthClass: "w-8 sm:w-16" },
+  { src: "/doodles/df.png", strokeClass: "", widthClass: "w-8 sm:w-16" },
   { src: "/doodles/d3.png", widthClass: "w-10 sm:w-20" },
   { src: "/doodles/d2.png", widthClass: "w-8 sm:w-16" },
   { src: "/doodles/doodle2.png", widthClass: "w-16 sm:w-32" },
+  { src: "/doodles/asq.png", widthClass: "w-8 sm:w-16" },
+  { src: "/doodles/asq3.png", widthClass: "w-10 sm:w-20" },
+  { src: "/doodles/asqs.png", widthClass: "w-12 sm:w-24" },
+  { src: "/doodles/heart (2).png", widthClass: "w-8 sm:w-16" },
+  { src: "/doodles/j.png", widthClass: "w-10 sm:w-20" },
+  { src: "/doodles/j2.png", widthClass: "w-8 sm:w-16" },
+  { src: "/doodles/j3.png", widthClass: "w-10 sm:w-20" },
 ];
 
 const WATERMARK_DOODLES = [

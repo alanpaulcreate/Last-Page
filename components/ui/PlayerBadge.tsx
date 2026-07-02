@@ -1,4 +1,5 @@
 import { Player } from "@/types";
+import { PencilIcon } from "@/components/ui/Icons";
 
 interface PlayerBadgeProps {
   player: Player;
@@ -32,7 +33,9 @@ export default function PlayerBadge({ player, isHost, isCurrentTurn }: PlayerBad
             <span className="text-xs text-pencil/90 font-hand">(host)</span>
           )}
           {player.isGuest && (
-            <span className="text-xs text-pencil/65 font-hand">✏️</span>
+            <span className="text-pencil/65 inline-flex items-center" title="Guest Player">
+              <PencilIcon size={12} className="inline ml-1" />
+            </span>
           )}
         </div>
         <div className="text-xs text-pencil/80 font-hand">
@@ -40,7 +43,9 @@ export default function PlayerBadge({ player, isHost, isCurrentTurn }: PlayerBad
         </div>
       </div>
       {isCurrentTurn && (
-        <div className="ml-auto text-lg animate-bounce-slow">✏️</div>
+        <div className="ml-auto animate-bounce-slow text-ink">
+          <PencilIcon size={16} />
+        </div>
       )}
     </div>
   );

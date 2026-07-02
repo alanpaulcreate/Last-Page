@@ -5,13 +5,22 @@ import {
   ChatMessage,
   sendChatMessage,
   subscribeChatMessages,
+  deleteChatMessage,
+  clearChatMessages
 } from "@/lib/firestore";
+import {
+  ChatIcon,
+  SendIcon,
+  TrashIcon,
+  CloseIcon
+} from "@/components/ui/Icons";
 
 interface ChatBoxProps {
   roomId: string;
+  isHost?: boolean;
 }
 
-export default function ChatBox({ roomId }: ChatBoxProps) {
+export default function ChatBox({ roomId, isHost = false }: ChatBoxProps) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -23,7 +32,7 @@ export default function ChatBox({ roomId }: ChatBoxProps) {
 
   // Subscribe to real-time messages
   useEffect(() => {
-    if (!user) return; // Wait for authentication to resolve
+    if (!user) return;
     const unsub = subscribeChatMessages(roomId, (msgs) => {
       setMessages(msgs);
       if (!open) {
@@ -84,18 +93,33 @@ export default function ChatBox({ roomId }: ChatBoxProps) {
             style={{ borderColor: "rgba(191,215,255,0.6)" }}
           >
             <span
-              className="font-hand text-xl font-bold text-ink"
+              className="font-hand text-xl font-bold text-ink flex items-center gap-1.5"
               style={{ fontFamily: "'Caveat', cursive" }}
             >
-              ✏️ Room Chat
+              <ChatIcon size={18} /> Room Chat
             </span>
-            <button
-              onClick={() => setOpen(false)}
-              className="text-pencil/80 hover:text-ink transition-colors text-lg leading-none"
-              aria-label="Close chat"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-2">
+              {isHost && messages.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (confirm("Are you sure you want to clear all chat messages?")) {
+                      clearChatMessages(roomId);
+                    }
+                  }}
+                  className="text-red-margin hover:text-red-600 text-xs font-hand underline cursor-pointer"
+                  title="Clear all messages"
+                >
+                  Clear
+                </button>
+              )}
+              <button
+                onClick={() => setOpen(false)}
+                className="text-pencil/80 hover:text-ink transition-colors leading-none cursor-pointer flex items-center justify-center"
+                aria-label="Close chat"
+              >
+                <CloseIcon size={18} />
+              </button>
+            </div>
           </div>
 
           {/* Messages */}
@@ -122,26 +146,38 @@ export default function ChatBox({ roomId }: ChatBoxProps) {
                   >
                     {isMe ? "You" : msg.displayName}
                   </span>
-                  {/* Bubble */}
-                  <div
-                    className="max-w-[85%] px-3 py-2 rounded-sm text-sm relative"
-                    style={{
-                      fontFamily: "'Caveat', cursive",
-                      fontSize: "1.05rem",
-                      lineHeight: "1.4",
-                      background: isMe
-                        ? "var(--ink)"
-                        : "rgba(191,215,255,0.45)",
-                      color: isMe ? "var(--paper)" : "var(--ink)",
-                      boxShadow: "2px 2px 0 rgba(74,74,74,0.15), 3px 4px 3px rgba(74,74,74,0.08)",
-                    }}
-                  >
-                    {msg.text}
-                    {/* Pencil underline texture */}
+                  {/* Bubble & Delete row */}
+                  <div className={`flex items-center gap-1.5 max-w-[90%] ${isMe ? "flex-row-reverse" : "flex-row"}`}>
                     <div
-                      className="absolute bottom-0 left-0 right-0 h-px opacity-20"
-                      style={{ background: isMe ? "rgba(255,255,255,0.4)" : "var(--ink)" }}
-                    />
+                      className="px-3 py-2 rounded-sm text-sm relative"
+                      style={{
+                        fontFamily: "'Caveat', cursive",
+                        fontSize: "1.05rem",
+                        lineHeight: "1.4",
+                        background: isMe
+                          ? "var(--ink)"
+                          : "rgba(191,215,255,0.45)",
+                        color: isMe ? "var(--paper)" : "var(--ink)",
+                        boxShadow: "2px 2px 0 rgba(74,74,74,0.15), 3px 4px 3px rgba(74,74,74,0.08)",
+                      }}
+                    >
+                      {msg.text}
+                      {/* Pencil underline texture */}
+                      <div
+                        className="absolute bottom-0 left-0 right-0 h-px opacity-20"
+                        style={{ background: isMe ? "rgba(255,255,255,0.4)" : "var(--ink)" }}
+                      />
+                    </div>
+                    {isHost && (
+                      <button
+                        onClick={() => deleteChatMessage(roomId, msg.id)}
+                        className="text-red-margin hover:text-red-600 transition-colors p-1 cursor-pointer flex items-center justify-center"
+                        title="Delete message"
+                        aria-label="Delete message"
+                      >
+                        <TrashIcon size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -169,10 +205,10 @@ export default function ChatBox({ roomId }: ChatBoxProps) {
             <button
               onClick={handleSend}
               disabled={!input.trim() || sending}
-              className="sketch-btn-primary sketch-btn text-sm px-3 py-1 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="sketch-btn-primary sketch-btn text-sm px-3 py-1 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center"
               aria-label="Send message"
             >
-              ✈
+              <SendIcon size={16} />
             </button>
           </div>
         </div>
@@ -181,7 +217,7 @@ export default function ChatBox({ roomId }: ChatBoxProps) {
       {/* Floating bubble button */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="relative w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-transform hover:scale-110 active:scale-95 pencil-shadow"
+        className="relative w-14 h-14 rounded-full flex items-center justify-center transition-transform hover:scale-110 active:scale-95 pencil-shadow cursor-pointer"
         style={{
           background: "var(--ink)",
           color: "var(--paper)",
@@ -190,11 +226,11 @@ export default function ChatBox({ roomId }: ChatBoxProps) {
         }}
         aria-label={open ? "Close chat" : "Open chat"}
       >
-        {open ? "✕" : "💬"}
+        {open ? <CloseIcon size={24} /> : <ChatIcon size={24} />}
         {/* Unread badge */}
         {!open && unread > 0 && (
           <span
-            className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center"
+            className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center animate-bounce"
             style={{
               background: "var(--red-margin)",
               color: "white",

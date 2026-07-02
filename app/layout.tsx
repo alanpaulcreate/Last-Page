@@ -1,21 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Caveat } from "next/font/google";
 import "./globals.css";
 import NavBar from "@/components/layout/NavBar";
 import DoodleBackground from "@/components/layout/DoodleBackground";
 import Link from "next/link";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const caveat = Caveat({
-  subsets: ["latin"],
-  variable: "--font-caveat",
-  display: "swap",
-});
 
 export const viewport: Viewport = {
   themeColor: "#0e408e",
@@ -53,7 +40,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" data-scroll-behavior="smooth">
-      <body className={`${inter.variable} ${caveat.variable} notebook-bg min-h-screen flex flex-col justify-between`}>
+      <body className="notebook-bg min-h-screen flex flex-col justify-between">
         {/* Graphite Lead Shading Overlay */}
         <div className="graphite-shading-bg" />
 

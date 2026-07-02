@@ -30,7 +30,13 @@ export function randomGuestName(): string {
 
 export async function loginAsGuest(customName?: string): Promise<AppUser> {
   const cred = await signInAnonymously(getFirebaseAuth());
-  const displayName = customName || randomGuestName();
+  // Sanitize the guest display name: strip HTML tags and limit length to prevent XSS (from check.txt security audit)
+  let displayName = customName ? customName.replace(/<[^>]*>/g, "").trim() : randomGuestName();
+  if (displayName.length === 0) {
+    displayName = randomGuestName();
+  } else {
+    displayName = displayName.substring(0, 16); // enforce max length of 16
+  }
   await updateProfile(cred.user, { displayName });
   return userToAppUser(cred.user, true);
 }

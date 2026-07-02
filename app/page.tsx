@@ -4,22 +4,40 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/lib/auth";
+import {
+  HangmanGameIcon,
+  SosGameIcon,
+  DotsGameIcon,
+  NamePlaceGameIcon,
+  BingoGameIcon,
+  TicTacToeGameIcon,
+  PencilIcon,
+} from "@/components/ui/Icons";
 
 const GAMES: GameCardInfo[] = [
   {
-    type: "hangman",
-    title: "Hangman",
-    description: "Guess the word before the stick figure meets his fate!",
-    icon: "🪢",
+    type: "tic-tac-toe",
+    title: "Tic-tac-toe",
+    description: "A classic 3x3 pencil grid. Place X or O to get 3 in a row!",
+    icon: <TicTacToeGameIcon size={36} className="text-ink animate-pulse" />,
     color: "var(--card-yellow)",
-    rotation: "-2deg",
+    rotation: "-1.5deg",
+    players: "2 players",
+  },
+  {
+    type: "bingo",
+    title: "Bingo (1–25)",
+    description: "Fill a 5x5 card with numbers 1 to 25. Complete 5 lines to win BINGO!",
+    icon: <BingoGameIcon size={36} className="text-ink animate-pulse" />,
+    color: "var(--card-blue)",
+    rotation: "1deg",
     players: "2 players",
   },
   {
     type: "sos",
     title: "SOS",
     description: "Spell S-O-S on the grid to score points. Most SOS wins!",
-    icon: "🆘",
+    icon: <SosGameIcon size={36} className="text-ink" />,
     color: "var(--card-red)",
     rotation: "1.5deg",
     players: "2 players",
@@ -28,17 +46,26 @@ const GAMES: GameCardInfo[] = [
     type: "dots-and-boxes",
     title: "Dots & Boxes",
     description: "Draw lines, complete boxes, claim the most territory!",
-    icon: "⬛",
-    color: "var(--card-blue)",
+    icon: <DotsGameIcon size={36} className="text-ink" />,
+    color: "var(--card-green)",
     rotation: "-1deg",
+    players: "2 players",
+  },
+  {
+    type: "hangman",
+    title: "Hangman",
+    description: "Guess the word before the stick figure meets his fate!",
+    icon: <HangmanGameIcon size={36} className="text-ink" />,
+    color: "var(--card-yellow)",
+    rotation: "-2deg",
     players: "2 players",
   },
   {
     type: "name-place",
     title: "Name Place Animal Thing",
     description: "A letter drops — fill in Name, Place, Animal & Thing fast!",
-    icon: "📝",
-    color: "var(--card-green)",
+    icon: <NamePlaceGameIcon size={36} className="text-ink" />,
+    color: "var(--card-blue)",
     rotation: "2deg",
     players: "2–4 players",
   },
@@ -49,6 +76,8 @@ const GAME_PATHS: Record<string, string> = {
   sos: "/games/sos",
   "dots-and-boxes": "/games/dots-and-boxes",
   "name-place": "/games/name-place",
+  bingo: "/games/bingo",
+  "tic-tac-toe": "/games/tic-tac-toe",
 };
 
 export default function HomePage() {
@@ -65,7 +94,8 @@ export default function HomePage() {
             alt="Last Page"
             width={220}
             height={220}
-            className="object-contain drop-shadow-md w-[180px] sm:w-[220px] lg:w-[280px] h-auto"
+            className="object-contain drop-shadow-md !w-[180px] sm:!w-[220px] lg:!w-[280px] h-auto"
+            style={{ width: "auto", height: "auto" }}
             priority
           />
         </div>
@@ -88,7 +118,7 @@ export default function HomePage() {
       </div>
 
       {/* Game Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
         {GAMES.map((game, i) => (
           <Link
             key={game.type}
@@ -134,7 +164,7 @@ export default function HomePage() {
                   className="text-xs lg:text-sm text-pencil/80 font-hand"
                   style={{ fontFamily: "'Caveat', cursive" }}
                 >
-                  👥 {game.players}
+                  Players: {game.players}
                 </span>
                 <span
                   className="sketch-btn text-xs py-1 px-2.5 group-hover:bg-ink group-hover:text-paper transition-colors"
@@ -157,8 +187,8 @@ export default function HomePage() {
 
       {/* Footer tagline */}
       <div className="text-center mt-16 text-pencil/95">
-        <p style={{ fontFamily: "'Caveat', cursive", fontSize: "1.1rem" }}>
-          ✏️ Doodled with ♥ — no rulers, no teachers, just games.
+        <p style={{ fontFamily: "'Caveat', cursive", fontSize: "1.1rem" }} className="flex items-center justify-center gap-1.5">
+          <PencilIcon size={16} className="inline-block" /> Doodled with ♥ — no rulers, no teachers, just games.
         </p>
         <p style={{ fontFamily: "'Caveat', cursive", fontSize: "1rem" }} className="mt-1 text-pencil/95">
           by <span className="font-semibold tracking-wide">asq.create</span>
