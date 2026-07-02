@@ -8,8 +8,14 @@ export const viewport: Viewport = {
   themeColor: "#0e408e",
 };
 
+const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : "https://ourlastpage.vercel.app";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ourlastpage.vercel.app"),
+  metadataBase: new URL(baseUrl),
   title: "Last Page — Paper Games",
   description:
     "The Last Page of Your School Notebook — play classic paper games online with friends. Hangman, SOS, Dots & Boxes, and Name Place Animal Thing.",
@@ -23,7 +29,14 @@ export const metadata: Metadata = {
     title: "Last Page — Paper Games",
     description: "The Last Page of Your School Notebook",
     type: "website",
-    images: ["/logo.png"],
+    images: [
+      {
+        url: "/logo.png",
+        width: 1426,
+        height: 584,
+        alt: "Last Page — Paper Games Logo",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
