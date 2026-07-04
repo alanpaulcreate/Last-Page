@@ -94,8 +94,8 @@ export default function HomePage() {
             alt="Last Page"
             width={220}
             height={220}
-            className="object-contain drop-shadow-md !w-[180px] sm:!w-[220px] lg:!w-[280px] h-auto"
-            style={{ width: "auto", height: "auto" }}
+            className="object-contain drop-shadow-md !w-[180px] sm:!w-[220px] lg:!w-[280px]"
+            style={{ height: "auto" }}
             priority
           />
         </div>
